@@ -22,15 +22,26 @@ rm(list = ls())
 setwd("/Users/simontye/Research/Projects/Selection/2021_selection")
 
 # Load stage 1 data
-stage.1 <- read.csv(file = "data/stage_1.csv", head = TRUE, sep = ",")
+stage.1 <- read.csv(file = "data/stage_1.csv",
+                    head = TRUE, sep = ",")
 
 # Load functions
 get.se   <- function(x) sd(x) / sqrt(length((x)))
 get.mean <- function(x) mean(x)
 get.sum  <- function(x) sum(x, na.rm = TRUE)
+
+# Create theme
+pretty <- theme_classic(base_size = 12) +
+  theme(axis.title.y      = element_text(margin = margin(r = 5)),
+        axis.title.x      = element_text(margin = margin(t = 5)), 
+        axis.text         = element_text(color = "black"), 
+        axis.ticks        = element_line(color = "black"),
+        axis.ticks.length = unit(.25, "cm"), 
+        legend.key.size   = unit(1.5,  'lines'),
+        legend.position   = "right")
 ```
 
-### Step 2: Stage 1
+### Step 2: Format data
 
 ```{r, echo = `FALSE`}
 # Format data
@@ -57,15 +68,43 @@ stage.1 <- stage.1 %>%
          cull_s         = as.numeric(cull_s),
          cull_xs        = as.numeric(cull_xs),
          cull_total     = as.numeric(cull_total),
-         live_end       = as.numeric(live_end))
+         live_end       = as.numeric(live_end)) %>%
+  group_by(treatment, round, replicate) %>%
+  mutate(live_xl_b      = live_xl * (0.2 * (10^-9) * (2200^3.13)), # Dumont et al., 1975
+         live_l_b       = live_l * (0.2 * (10^-9) * (1700^3.13)),
+         live_m_b       = live_m * (0.2 * (10^-9) * (1200^3.13)),
+         live_s_b       = live_s * (0.2 * (10^-9) * (750^3.13)),
+         live_xs_b      = live_xs * (0.2 * (10^-9) * (295^3.13)),
+         cull_xl_b      = cull_xl * (0.2 * (10^-9) * (2200^3.13)), # Dumont et al., 1975
+         cull_l_b       = cull_l * (0.2 * (10^-9) * (1700^3.13)),
+         cull_m_b       = cull_m * (0.2 * (10^-9) * (1200^3.13)),
+         cull_s_b       = cull_s * (0.2 * (10^-9) * (750^3.13)),
+         cull_xs_b      = cull_xs * (0.2 * (10^-9) * (295^3.13)),
+         live_b         = sum(live_xl_b, live_l_b,
+                              live_m_b, live_s_b,
+                              live_xs_b, na.rm = TRUE),
+         cull_b         = sum(cull_xl_b, cull_l_b,
+                              cull_m_b, cull_s_b,
+                              cull_xs_b, na.rm = TRUE))
 
 # Summary statistics
 stage.1.sum <- stage.1 %>%
   group_by(treatment, round) %>%
-  summarize(live_start_mean = get.mean(live_start),
-            live_start_se   = get.se(live_start))
+  summarize(
+    # Abundance
+    live_start_mean = get.mean(live_start),
+    live_start_se   = get.se(live_start),
+    # Biomass
+    live_b_mean     = get.mean(log(live_b)),
+    live_b_se       = get.se(log(live_b)),
+    cull_b_mean     = get.mean(log(cull_b)),
+    cull_b_se       = get.se(log(cull_b)))
+```
 
-# Quick figure
+### Step 3: Quick figures
+
+```{r, echo = `FALSE`}
+# Quick fig: abundance
 ggplot() +
   geom_errorbar(stage.1.sum,
                 mapping = aes(x = round, y = live_start_mean,
@@ -73,9 +112,53 @@ ggplot() +
                               ymax = live_start_mean + live_start_se),
                 width = 0, color = "black") +
   geom_point(stage.1.sum,
-             mapping = aes(x = round, y = live_start_mean, color = treatment)) +
-  labs(x = "Round", y = "Abundance")
+             mapping = aes(x = round, y = live_start_mean, color = treatment),
+             size = 2.5) +
+  labs(x = "Round", y = "Abundance") +
+  pretty
 
+ggplot() +
+  geom_boxplot(stage.1,
+               mapping = aes(x = treatment, y = live_start, fill = treatment)) +
+  labs(x = "Treatment", y = "Abundance") +
+  pretty
+
+# Quick fig: biomass (live)
+ggplot() +
+  geom_errorbar(stage.1.sum,
+                mapping = aes(x = round, y = live_b_mean,
+                              ymin = live_b_mean- live_b_se,
+                              ymax = live_b_mean + live_b_se),
+                width = 0, color = "black") +
+  geom_point(stage.1.sum,
+             mapping = aes(x = round, y = live_b_mean, color = treatment),
+             size = 2.5) +
+  labs(x = "Round", y = "Biomass [ln(ug/L)]") +
+  pretty
+
+ggplot() +
+  geom_boxplot(stage.1,
+               mapping = aes(x = treatment, y = live_b, fill = treatment)) +
+  labs(x = "Treatment", y = "Biomass [ln(ug/L)]") +
+  pretty
+
+# Quick fig: biomass (culled)
+ggplot() +
+  geom_errorbar(stage.1.sum,
+                mapping = aes(x = round, y = cull_b_mean,
+                              ymin = cull_b_mean- cull_b_se,
+                              ymax = cull_b_mean + cull_b_se),
+                width = 0, color = "black") +
+  geom_point(stage.1.sum,
+             mapping = aes(x = round, y = cull_b_mean, color = treatment)) +
+  labs(x = "Round", y = "Biomass [ln(ug/L)]") +
+  pretty
+
+ggplot() +
+  geom_boxplot(stage.1,
+               mapping = aes(x = treatment, y = cull_b, fill = treatment)) +
+  labs(x = "Treatment", y = "Biomass [ln(ug/L)]") +
+  pretty
 ```
 
 
