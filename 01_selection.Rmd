@@ -1,0 +1,81 @@
+---
+title: "01_selection"
+author: "SPT"
+date: "2021_08_30"
+output: github_document
+---
+
+### Step 1: Load data
+
+```{r, setup, include = `FALSE`, echo = `FALSE`}
+knitr::opts_knit$set(root.dir = "/Users/simontye/Research/Projects/Selection/2021_selection")
+```
+
+```{r, echo = `FALSE`}
+# Load packages
+library(tidyverse)
+
+# Reset global environment
+rm(list = ls())
+
+# Set working directory
+setwd("/Users/simontye/Research/Projects/Selection/2021_selection")
+
+# Load stage 1 data
+stage.1 <- read.csv(file = "data/stage_1.csv", head = TRUE, sep = ",")
+
+# Load functions
+get.se   <- function(x) sd(x) / sqrt(length((x)))
+get.mean <- function(x) mean(x)
+get.sum  <- function(x) sum(x, na.rm = TRUE)
+```
+
+### Step 2: Stage 1
+
+```{r, echo = `FALSE`}
+# Format data
+stage.1 <- stage.1 %>%
+  rename_all(tolower) %>%
+  mutate_all(tolower) %>%
+  dplyr::rename(live_start = live_beginning) %>%
+  mutate(date           = as.Date(date, format = "%m/%d/%y"),
+         treatment      = as.factor(treatment),
+         round          = as.numeric(round),
+         replicate      = as.numeric(replicate),
+         resource       = as.factor(resource),
+         culling        = as.factor(culling),
+         live_xl        = as.numeric(live_xl),
+         live_l         = as.numeric(live_l),
+         live_m         = as.numeric(live_m),
+         live_s         = as.numeric(live_s),
+         live_xs        = as.numeric(live_xs),
+         live_start     = as.numeric(live_start),
+         cull_number    = as.numeric(cull_number),
+         cull_xl        = as.numeric(cull_xl),
+         cull_l         = as.numeric(cull_l),
+         cull_m         = as.numeric(cull_m),
+         cull_s         = as.numeric(cull_s),
+         cull_xs        = as.numeric(cull_xs),
+         cull_total     = as.numeric(cull_total),
+         live_end       = as.numeric(live_end))
+
+# Summary statistics
+stage.1.sum <- stage.1 %>%
+  group_by(treatment, round) %>%
+  summarize(live_start_mean = get.mean(live_start),
+            live_start_se   = get.se(live_start))
+
+# Quick figure
+ggplot() +
+  geom_errorbar(stage.1.sum,
+                mapping = aes(x = round, y = live_start_mean,
+                              ymin = live_start_mean- live_start_se,
+                              ymax = live_start_mean + live_start_se),
+                width = 0, color = "black") +
+  geom_point(stage.1.sum,
+             mapping = aes(x = round, y = live_start_mean, color = treatment)) +
+  labs(x = "Round", y = "Abundance")
+
+```
+
+
