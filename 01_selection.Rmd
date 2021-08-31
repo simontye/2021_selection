@@ -5,6 +5,16 @@ date: "2021_08_30"
 output: github_document
 ---
 
+Experimental evolution project
+10 Daphnia pulicaria genotypes in 2x2 factorial design,
+w/ uniform or size-selective (large dies) weekly cullings,
+and low or high Scenedesmus concentrations
+
+Stage 1: selective regimes
+Stage 2: life history traits of F2s
+Stage 3: evolutionary trap?
+Stage 4: does any of it matter?
+
 ### Step 1: Load data
 
 ```{r, setup, include = `FALSE`, echo = `FALSE`}
@@ -32,13 +42,16 @@ get.sum  <- function(x) sum(x, na.rm = TRUE)
 
 # Create theme
 pretty <- theme_classic(base_size = 12) +
-  theme(axis.title.y      = element_text(margin = margin(r = 5)),
-        axis.title.x      = element_text(margin = margin(t = 5)), 
+  theme(axis.title.y      = element_text(margin = margin(r = 10)),
+        axis.title.x      = element_text(margin = margin(t = 10)), 
         axis.text         = element_text(color = "black"), 
         axis.ticks        = element_line(color = "black"),
         axis.ticks.length = unit(.25, "cm"), 
         legend.key.size   = unit(1.5,  'lines'),
         legend.position   = "right")
+
+# Create color palette
+treatment.colors <- c("#1f78b4", "#a6cee3", "#33a02c", "#b2df8a")
 ```
 
 ### Step 2: Format data
@@ -49,43 +62,55 @@ stage.1 <- stage.1 %>%
   rename_all(tolower) %>%
   mutate_all(tolower) %>%
   dplyr::rename(live_start = live_beginning) %>%
-  mutate(date           = as.Date(date, format = "%m/%d/%y"),
-         treatment      = as.factor(treatment),
-         round          = as.numeric(round),
-         replicate      = as.numeric(replicate),
-         resource       = as.factor(resource),
-         culling        = as.factor(culling),
-         live_xl        = as.numeric(live_xl),
-         live_l         = as.numeric(live_l),
-         live_m         = as.numeric(live_m),
-         live_s         = as.numeric(live_s),
-         live_xs        = as.numeric(live_xs),
-         live_start     = as.numeric(live_start),
-         cull_number    = as.numeric(cull_number),
-         cull_xl        = as.numeric(cull_xl),
-         cull_l         = as.numeric(cull_l),
-         cull_m         = as.numeric(cull_m),
-         cull_s         = as.numeric(cull_s),
-         cull_xs        = as.numeric(cull_xs),
-         cull_total     = as.numeric(cull_total),
-         live_end       = as.numeric(live_end)) %>%
+  mutate(date        = as.Date(date, format = "%m/%d/%y"),
+         treatment   = as.factor(treatment),
+         round       = as.numeric(round),
+         replicate   = as.numeric(replicate),
+         resource    = as.factor(resource),
+         culling     = as.factor(culling),
+         live_xl     = as.numeric(live_xl),
+         live_l      = as.numeric(live_l),
+         live_m      = as.numeric(live_m),
+         live_s      = as.numeric(live_s),
+         live_xs     = as.numeric(live_xs),
+         live_start  = as.numeric(live_start),
+         cull_number = as.numeric(cull_number),
+         cull_xl     = as.numeric(cull_xl),
+         cull_l      = as.numeric(cull_l),
+         cull_m      = as.numeric(cull_m),
+         cull_s      = as.numeric(cull_s),
+         cull_xs     = as.numeric(cull_xs),
+         cull_total  = as.numeric(cull_total),
+         live_end    = as.numeric(live_end)) %>%
   group_by(treatment, round, replicate) %>%
-  mutate(live_xl_b      = live_xl * (0.2 * (10^-9) * (2200^3.13)), # Dumont et al., 1975
-         live_l_b       = live_l * (0.2 * (10^-9) * (1700^3.13)),
-         live_m_b       = live_m * (0.2 * (10^-9) * (1200^3.13)),
-         live_s_b       = live_s * (0.2 * (10^-9) * (750^3.13)),
-         live_xs_b      = live_xs * (0.2 * (10^-9) * (295^3.13)),
-         cull_xl_b      = cull_xl * (0.2 * (10^-9) * (2200^3.13)), # Dumont et al., 1975
-         cull_l_b       = cull_l * (0.2 * (10^-9) * (1700^3.13)),
-         cull_m_b       = cull_m * (0.2 * (10^-9) * (1200^3.13)),
-         cull_s_b       = cull_s * (0.2 * (10^-9) * (750^3.13)),
-         cull_xs_b      = cull_xs * (0.2 * (10^-9) * (295^3.13)),
-         live_b         = sum(live_xl_b, live_l_b,
-                              live_m_b, live_s_b,
-                              live_xs_b, na.rm = TRUE),
-         cull_b         = sum(cull_xl_b, cull_l_b,
-                              cull_m_b, cull_s_b,
-                              cull_xs_b, na.rm = TRUE))
+  mutate(live_xl_b = live_xl * (0.2 * (10^-9) * (2200^3.13)), # Dumont et al., 1975
+         live_l_b  = live_l * (0.2 * (10^-9) * (1700^3.13)),
+         live_m_b  = live_m * (0.2 * (10^-9) * (1200^3.13)),
+         live_s_b  = live_s * (0.2 * (10^-9) * (750^3.13)),
+         live_xs_b = live_xs * (0.2 * (10^-9) * (295^3.13)),
+         cull_xl_b = cull_xl * (0.2 * (10^-9) * (2200^3.13)), # Dumont et al., 1975
+         cull_l_b  = cull_l * (0.2 * (10^-9) * (1700^3.13)),
+         cull_m_b  = cull_m * (0.2 * (10^-9) * (1200^3.13)),
+         cull_s_b  = cull_s * (0.2 * (10^-9) * (750^3.13)),
+         cull_xs_b = cull_xs * (0.2 * (10^-9) * (295^3.13)),
+         live_b    = sum(live_xl_b, live_l_b,
+                         live_m_b, live_s_b,
+                         live_xs_b, na.rm = TRUE),
+         cull_b    = sum(cull_xl_b, cull_l_b,
+                         cull_m_b, cull_s_b,
+                         cull_xs_b, na.rm = TRUE))
+
+# Rename and reorder treatments
+levels(stage.1$treatment)[levels(stage.1$treatment)=="rp"]  = "Resource pulse"
+levels(stage.1$treatment)[levels(stage.1$treatment)=="pr"]  = "Predator removal"
+levels(stage.1$treatment)[levels(stage.1$treatment)=="mme"] = "Mass mortality event"
+levels(stage.1$treatment)[levels(stage.1$treatment)=="c"]   = "Control"
+stage.1$treatment <- factor(stage.1$treatment,
+                            levels = c("Control",
+                                       "Predator removal",
+                                       "Resource pulse",
+                                       "Mass mortality event"))
+
 
 # Summary statistics
 stage.1.sum <- stage.1 %>%
@@ -94,6 +119,8 @@ stage.1.sum <- stage.1 %>%
     # Abundance
     live_start_mean = get.mean(live_start),
     live_start_se   = get.se(live_start),
+    cull_mean       = get.mean(cull_total),
+    cull_se         = get.se(cull_total),
     # Biomass
     live_b_mean     = get.mean(log(live_b)),
     live_b_se       = get.se(log(live_b)),
@@ -104,60 +131,133 @@ stage.1.sum <- stage.1 %>%
 ### Step 3: Quick figures
 
 ```{r, echo = `FALSE`}
-# Quick fig: abundance
+#################
+### Abundance (live)
+
+# Lines
 ggplot() +
   geom_errorbar(stage.1.sum,
                 mapping = aes(x = round, y = live_start_mean,
-                              ymin = live_start_mean- live_start_se,
+                              ymin = live_start_mean - live_start_se,
                               ymax = live_start_mean + live_start_se),
                 width = 0, color = "black") +
-  geom_point(stage.1.sum,
-             mapping = aes(x = round, y = live_start_mean, color = treatment),
-             size = 2.5) +
-  labs(x = "Round", y = "Abundance") +
+  geom_line(stage.1.sum,
+            mapping = aes(x = round, y = live_start_mean, color = treatment),
+            size = 1) +
+  scale_color_manual(values = c(treatment.colors)) +
+  labs(x = "Round",
+       y = "Abundance (live individuals)",
+       color = "Treatment") +
   pretty
 
+# Boxplots
 ggplot() +
   geom_boxplot(stage.1,
                mapping = aes(x = treatment, y = live_start, fill = treatment)) +
-  labs(x = "Treatment", y = "Abundance") +
+  labs(x = "Treatment",
+       y = "Abundance (live individuals)",
+       fill = "Treatment") +
+  scale_fill_manual(values = c(treatment.colors)) +
   pretty
 
-# Quick fig: biomass (live)
+#################
+### Abundance (culled)
+
+# Lines
+ggplot() +
+  geom_errorbar(stage.1.sum,
+                mapping = aes(x = round, y = cull_mean,
+                              ymin = cull_mean - cull_se,
+                              ymax = cull_mean + cull_se),
+                width = 0, color = "black") +
+  geom_line(stage.1.sum,
+            mapping = aes(x = round, y = cull_mean, color = treatment),
+            size = 1) +
+  scale_color_manual(values = c(treatment.colors)) +
+  labs(x = "Round",
+       y = "Abundance (culled individuals)",
+       color = "Treatment") +
+  pretty
+
+# Boxplots
+ggplot() +
+  geom_boxplot(stage.1,
+               mapping = aes(x = treatment, y = cull_total, fill = treatment)) +
+  labs(x = "Treatment",
+       y = "Abundance (culled individuals)",
+       fill = "Treatment") +
+  scale_fill_manual(values = c(treatment.colors)) +
+  pretty
+
+#################
+### Density
+
+# Boxplots
+ggplot() +
+  geom_boxplot(stage.1,
+               mapping = aes(x = treatment, y = live_start/.9, fill = treatment)) +
+  labs(x = "Treatment",
+       y = "Density (individuals / L)",
+       fill = "Treatment") +
+  scale_fill_manual(values = c(treatment.colors)) +
+  pretty
+
+#################
+### Biomass (live)
+
+# Lines
 ggplot() +
   geom_errorbar(stage.1.sum,
                 mapping = aes(x = round, y = live_b_mean,
-                              ymin = live_b_mean- live_b_se,
+                              ymin = live_b_mean - live_b_se,
                               ymax = live_b_mean + live_b_se),
                 width = 0, color = "black") +
-  geom_point(stage.1.sum,
-             mapping = aes(x = round, y = live_b_mean, color = treatment),
-             size = 2.5) +
-  labs(x = "Round", y = "Biomass [ln(ug/L)]") +
+  geom_line(stage.1.sum,
+            mapping = aes(x = round, y = live_b_mean, color = treatment),
+            size = 1) +
+  scale_color_manual(values = c(treatment.colors)) +
+  labs(x = "Round",
+       y = "Biomass of live individuals [ln(ug/L)]",
+       color = "Treatment") +
   pretty
 
+# Boxplots
 ggplot() +
   geom_boxplot(stage.1,
                mapping = aes(x = treatment, y = live_b, fill = treatment)) +
-  labs(x = "Treatment", y = "Biomass [ln(ug/L)]") +
+  scale_fill_manual(values = c(treatment.colors)) +
+  labs(x = "Treatment",
+       y = "Biomass of live individuals [ln(ug/L)]",
+       fill = "Treatment") +
   pretty
 
-# Quick fig: biomass (culled)
+#################
+### Biomass (culled)
+
+# Lines
 ggplot() +
   geom_errorbar(stage.1.sum,
                 mapping = aes(x = round, y = cull_b_mean,
-                              ymin = cull_b_mean- cull_b_se,
+                              ymin = cull_b_mean - cull_b_se,
                               ymax = cull_b_mean + cull_b_se),
                 width = 0, color = "black") +
-  geom_point(stage.1.sum,
-             mapping = aes(x = round, y = cull_b_mean, color = treatment)) +
-  labs(x = "Round", y = "Biomass [ln(ug/L)]") +
+  geom_line(stage.1.sum,
+            mapping = aes(x = round, y = cull_b_mean, color = treatment),
+            size = 1) +
+  scale_color_manual(values = c(treatment.colors)) +
+  labs(x = "Round",
+       y = "Biomass of culled individuals [ln(ug/L)]",
+       color = "Treatment") +
   pretty
 
+# Boxplots
 ggplot() +
   geom_boxplot(stage.1,
                mapping = aes(x = treatment, y = cull_b, fill = treatment)) +
-  labs(x = "Treatment", y = "Biomass [ln(ug/L)]") +
+  scale_fill_manual(values = c(treatment.colors)) +
+  labs(x = "Treatment",
+       y = "Biomass of culled individuals [ln(ug/L)]",
+       fill = "Treatment") +
   pretty
 ```
 
